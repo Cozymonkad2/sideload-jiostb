@@ -123,16 +123,16 @@ Unplug the **WAN / incoming fiber cable** from your router.
 Launch **Docker Desktop** from the Start Menu and wait until the engine status switches to running.
 
 ### Step 6: Setup Technitium DNS
-
-1. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380).
-2. Go to **Zones** $\rightarrow$ Click **Add Zone**:
+1. Run Technitium DNS server app 
+2. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380).
+3. Go to **Zones** $\rightarrow$ Click **Add Zone**:
    * **Zone Name:** `jio.com`
    * **Zone Type:** `Primary Zone`
-3. Click into `jio.com` $\rightarrow$ Click **Add Record**:
+4. Click into `jio.com` $\rightarrow$ Click **Add Record**:
    * **Name:** `acs.oss`
    * **Type:** `A`
    * **IP Address:** *Your Windows 11 IPv4 Address*
-4. Save the record and ensure the zone is **Enabled**.
+5. Save the record and ensure the zone is **Enabled**.
 
 ### Step 7: Deploy TLS Containers
 
