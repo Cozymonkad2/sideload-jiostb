@@ -601,13 +601,26 @@ log "TR-069 push and remote command triggers disabled"
 adb_sh "pm uninstall -k --user 0 com.jio.stbadservice"
 log "Jio Ad Service (com.jio.stbadservice) uninstalled"
 
-# Install APKs in the folder strictly one-by-one (excluding AnExplorer and Stremio)
+# Install APKs in the folder strictly one-by-one
+# Priority: Monet Launcher first, then Shizuku/Shevery, then any others (excluding AnExplorer and Stremio)
 echo -e "  Installing APKs from folder (one-by-one)..."
 APKS=()
+
+# 1. Monet Launcher first
+for apk in "$SCRIPT_DIR"/*[Mm]onet*.apk; do
+    [ -f "$apk" ] && APKS+=("$apk")
+done
+
+# 2. Shizuku / Shevery second
+for apk in "$SCRIPT_DIR"/*[Ss]hizuku*.apk "$SCRIPT_DIR"/*[Ss]hevery*.apk; do
+    [ -f "$apk" ] && APKS+=("$apk")
+done
+
+# 3. Any other remaining APKs in the folder
 for apk in "$SCRIPT_DIR"/*.apk; do
     [ -f "$apk" ] || continue
     case "$(basename "$apk")" in
-        *[Aa]n[Ee]xplorer*|*[Ss]tremio*) continue ;;
+        *[Aa]n[Ee]xplorer*|*[Ss]tremio*|*[Mm]onet*|*[Ss]hizuku*|*[Ss]hevery*) continue ;;
     esac
     APKS+=("$apk")
 done
@@ -643,6 +656,14 @@ if adb_sh "pm list packages" 2>/dev/null | grep -q "com.klevico.monet"; then
     adb_sh "pm grant com.klevico.monet android.permission.WRITE_SECURE_SETTINGS 2>/dev/null || true"
     log "Granted WRITE_SECURE_SETTINGS to Monet Launcher"
 fi
+
+# Grant Shizuku / Shevery extra permissions if present
+for pkg in "moe.shizuku.privileged.api" "com.hamondev.shevery"; do
+    if adb_sh "pm list packages" 2>/dev/null | grep -q "$pkg"; then
+        adb_sh "pm grant $pkg android.permission.WRITE_SECURE_SETTINGS 2>/dev/null || true"
+        log "Granted WRITE_SECURE_SETTINGS to Shizuku/Shevery ($pkg)"
+    fi
+done
 
 echo ""
 echo -e "${GREEN}Stage 1 complete.${NC}"
