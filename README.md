@@ -1,33 +1,24 @@
 # Jio STB ADB Setup Guide (Windows 11)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/OS-Windows%2011-blue?style=for-the-badge&logo=windows" alt="Windows 11" />
-  <img src="https://img.shields.io/badge/Hardware-JMSC200Av2%20%7C%20JMSB200A-green?style=for-the-badge" alt="Supported Models" />
-  <img src="https://img.shields.io/badge/Protocol-ADB%20Over%20Network-orange?style=for-the-badge&logo=android" alt="ADB" />
-  <img src="https://img.shields.io/badge/License-PoC-red?style=for-the-badge" alt="License" />
-</p>
-
----
-
 A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on supported Jio Set-Top Boxes using a Windows 11 PC and a local Wi-Fi router.
 
-> [!NOTE]  
-> **Tested Hardware & Firmware:**  
+> [!NOTE]
+> **Tested Hardware & Firmware:**
 > Verified working on **JMSC200Av2** and **JMSB200A** across firmware builds `22.1.09`, `24.1.39`, and `25.1.9`. It should work on older firmware versions as well.
 
-> [!CAUTION]  
-> **Incompatible Hardware:**  
+> [!CAUTION]
+> **Incompatible Hardware:**
 > This exploit **will not work on JHS series** STB models.
 
-> [!TIP]  
-> **Don't Panic If Something Goes Wrong:**  
+> [!TIP]
+> **Don't Panic If Something Goes Wrong:**
 > - **Box acting up?** Simply factory reset your Jio STB to restore it back to default settings, then start over.
 > - **Wi-Fi not connecting properly?** Go into network settings, choose **Forget Network**, re-enter your password, and reconnect. Everything will work fine.
 
-> [!IMPORTANT]  
-> **Package Installer Limitation (Read This!):**  
-> I tried everything possible, but could **not** enable the default Android package installer. Because of this, you cannot simply click an APK on the box to install it. **Every time you want to install apps, you must install them via ADB** from your PC using:  
-> ```bash
+> [!IMPORTANT]
+> **Package Installer Limitation (Read This!):**
+> I tried everything possible, but could **not** enable the default Android package installer. Because of this, you cannot simply click an APK on the box to install it. **Every time you want to install apps, you must install them via ADB** from your PC using:
+> ```cmd
 > adb install "filename.apk"
 > ```
 
@@ -40,11 +31,10 @@ A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on sup
 
 Once you execute Stage 1, the script performs several handy quality-of-life modifications on your Jio STB:
 
-- 🔓 **ADB Enabled:** Network ADB is activated so you can manage and sideload apps.
-- 🚀 **Monet Launcher Installed:** Replaces the cluttered default view with a clean launcher.
-- 📁 **File Explorer Added:** Gives you direct access to navigate files and connected storage.
-- 🛑 **Automatic Firmware Updates Blocked:** OTA auto-updates are disabled so your setup doesn't get overwritten.
-- 🚫 **Startup Boot Ads Disabled:** Annoying commercial popup ads that display when powering on the STB are suppressed.
+* 🔓 **ADB Enabled:** Network ADB is activated so you can manage and sideload apps.
+* 🚀 **Monet Launcher Installed:** Replaces the cluttered default view with a clean launcher.
+* 🛑 **Automatic Firmware Updates Blocked:** OTA auto-updates are disabled so your setup doesn't get overwritten.
+* 🚫 **Startup Boot Ads Disabled:** Annoying commercial popup ads that display when powering on the STB are suppressed.
 
 ---
 
@@ -218,7 +208,7 @@ Since the built-in package installer cannot be re-enabled, install any Android T
 
 ## ⚠️ Important Disclaimers
 
-- **Scope:** Stage 1 performs modifications such as enabling ADB, queueing downgrade flags, installing Monet Launcher and File Explorer, disabling TR-069 settings, and disabling startup ads.
+- **Scope:** Stage 1 performs modifications such as enabling ADB, queueing downgrade flags, installing Monet Launcher, disabling TR-069 settings, and disabling startup ads.
 - **Root/Bootloader:** This guide deliberately excludes `unlock.sh` and `pull_boot.sh`. Do not run Stage 2 utilities unless you know what you are doing.
 - **Liability:** Use only on hardware you own or have explicit authorization to test.
 
