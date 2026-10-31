@@ -55,7 +55,6 @@ Once you execute Stage 1, the script performs several handy quality-of-life modi
   * [9. Initialize Git Bash](#step-9-initialize-git-bash)
   * [10. Execute Stage 1](#step-10-execute-stage-1)
   * [11. Verify Connection](#step-11-verify-connection)
-  * [12. Teardown & Reset](#step-12-teardown--reset)
 * [Installing Apps via ADB](#-how-to-install-apps-via-adb)
 * [Important Disclaimers](#-important-disclaimers)
 * [Credits & Acknowledgments](#-credits--acknowledgments)
@@ -124,7 +123,7 @@ Launch **Docker Desktop** from the Start Menu and wait until the engine status s
 
 ### Step 6: Setup Technitium DNS
 1. Run Technitium DNS server app (Nothing will show up on screen but don't worry its running in background)
-2. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380).
+2. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380). (if this url doesn't open then in bottom right corner of task bar there is system tray open that right click on the tiny DNS server app logo then click on dashboard)
 3. Go to **Zones** $\rightarrow$ Click **Add Zone**:
    * **Zone Name:** `jio.com`
    * **Zone Type:** `Primary Zone`
