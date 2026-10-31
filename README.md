@@ -123,7 +123,7 @@ Unplug the **WAN / incoming fiber cable** from your router.
 Launch **Docker Desktop** from the Start Menu and wait until the engine status switches to running.
 
 ### Step 6: Setup Technitium DNS
-1. Run Technitium DNS server app 
+1. Run Technitium DNS server app (Nothing will show up on screen but don't worry its running in background)
 2. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380).
 3. Go to **Zones** $\rightarrow$ Click **Add Zone**:
    * **Zone Name:** `jio.com`
