@@ -74,7 +74,7 @@ Install these utilities on your Windows 11 system before starting:
 
 ## 📦 Repository Setup
 
-1. Grab the repository ZIP from [Here] (https://github.com/ilikechocopies/sideload-jiostb/).
+1. Download this the repository as a ZIP
 2. Extract the archive into your `Downloads` directory.
 
 ## 🚀 Step-by-Step Guide
