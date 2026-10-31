@@ -4,6 +4,7 @@
   <img src="https://img.shields.io/badge/OS-Windows%2011-blue?style=for-the-badge&logo=windows" alt="Windows 11" />
   <img src="https://img.shields.io/badge/Hardware-JMSC200Av2%20%7C%20JMSB200A-green?style=for-the-badge" alt="Supported Models" />
   <img src="https://img.shields.io/badge/Protocol-ADB%20Over%20Network-orange?style=for-the-badge&logo=android" alt="ADB" />
+  <img src="https://img.shields.io/badge/License-PoC-red?style=for-the-badge" alt="License" />
 </p>
 
 ---
@@ -20,18 +21,34 @@ A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on sup
 
 > [!TIP]  
 > **Don't Panic If Something Goes Wrong:**  
-> - **Box acting up?** Simply factory reset your Jio STB to restore it back to default settings, then start over.  
+> - **Box acting up?** Simply factory reset your Jio STB to restore it back to default settings, then start over.
 > - **Wi-Fi not connecting properly?** Go into network settings, choose **Forget Network**, re-enter your password, and reconnect. Everything will work fine.
 
----
+> [!IMPORTANT]  
+> **Package Installer Limitation (Read This!):**  
+> I tried everything possible, but could **not** enable the default Android package installer. Because of this, you cannot simply click an APK on the box to install it. **Every time you want to install apps, you must install them via ADB** from your PC using:  
+> ```bash
+> adb install "filename.apk"
+> ```
 
 > ❤️ **A quick note from Vishal Beniwal:**  
 > If this guide helped you and you'd like to support me, I don't want any money—just keep me in your blessings for future success!
 
 ---
 
-## ⚡ Quick Navigation
+## ✨ What Happens After Running the Script?
 
+Once you execute Stage 1, the script performs several handy quality-of-life modifications on your Jio STB:
+
+- 🔓 **ADB Enabled:** Network ADB is activated so you can manage and sideload apps.
+- 🚀 **Monet Launcher Installed:** Replaces the cluttered default view with a clean launcher.
+- 📁 **File Explorer Added:** Gives you direct access to navigate files and connected storage.
+- 🛑 **Automatic Firmware Updates Blocked:** OTA auto-updates are disabled so your setup doesn't get overwritten.
+- 🚫 **Startup Boot Ads Disabled:** Annoying commercial popup ads that display when powering on the STB are suppressed.
+
+---
+
+## ⚡ Quick Navigation
 - [Prerequisites](#-prerequisites)
 - [Repository Setup](#-repository-setup)
 - [Step-by-Step Guide](#-step-by-step-guide)
@@ -47,6 +64,7 @@ A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on sup
   - [10. Execute Stage 1](#step-10-execute-stage-1)
   - [11. Verify Connection](#step-11-verify-connection)
   - [12. Teardown & Reset](#step-12-teardown--reset)
+- [Installing Apps via ADB](#-how-to-install-apps-via-adb)
 - [Important Disclaimers](#-important-disclaimers)
 - [Credits & Acknowledgments](#-credits--acknowledgments)
 
@@ -182,9 +200,25 @@ Once ADB is confirmed:
 
 ---
 
+## 📲 How to Install Apps via ADB
+
+Since the built-in package installer cannot be re-enabled, install any Android TV APK using your terminal:
+
+1. Connect your PC to the STB over ADB (if not already connected):
+   ```bash
+   adb connect <STB_IP_ADDRESS>:5555
+   ```
+2. Sideload your preferred application:
+   ```bash
+   adb install "C:\path\to\your_app.apk"
+   ```
+3. The app will immediately show up inside **Monet Launcher**.
+
+---
+
 ## ⚠️ Important Disclaimers
 
-- **Scope:** Stage 1 performs modifications such as enabling ADB, queueing downgrade flags, and adjusting TR-069 settings.
+- **Scope:** Stage 1 performs modifications such as enabling ADB, queueing downgrade flags, installing Monet Launcher and File Explorer, disabling TR-069 settings, and disabling startup ads.
 - **Root/Bootloader:** This guide deliberately excludes `unlock.sh` and `pull_boot.sh`. Do not run Stage 2 utilities unless you know what you are doing.
 - **Liability:** Use only on hardware you own or have explicit authorization to test.
 
