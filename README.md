@@ -139,7 +139,7 @@ Launch **Docker Desktop** from the Start Menu and wait until the engine status s
 Open File Explorer, go to `sideload-jiostb/tls`, type `cmd` in the address bar, and press Enter:
 
 ```cmd
-docker compose up -d
+docker-compose up -d
 ```
 
 ### Step 8: Launch Proxy Listener
