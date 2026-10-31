@@ -1,4 +1,4 @@
-# Jio STB ADB Setup Guide (Windows 11)
+# Jio STB ADB Setup Guide (Windows 11 & 10)
 
 A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on supported Jio Set-Top Boxes using a Windows 11 PC and a local Wi-Fi router.
 
