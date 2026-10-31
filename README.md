@@ -174,7 +174,7 @@ Ensure Docker, Technitium, and `pass_front.py` are active, then run:
 Select your STB when prompted. To run only the required payload without stripping extras, you can alternatively use:
 
 ```bash
-./stage1.sh --tasks-only
+./stage1.sh
 ```
 
 Once finished, power-cycle the STB:
