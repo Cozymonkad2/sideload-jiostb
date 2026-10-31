@@ -74,7 +74,7 @@ Install these utilities on your Windows 11 system before starting:
 
 ## 📦 Repository Setup
 
-1. Grab the repository ZIP from [Housekeeping-PoC](https://github.com/JFC-Group/Housekeeping-PoC).
+1. Grab the repository ZIP from [Here](https://github.com/ilikechocopies/sideload-jiostb/).
 2. Extract the archive into your `Downloads` directory.
 3. Rename the extracted folder to:
    ```text
