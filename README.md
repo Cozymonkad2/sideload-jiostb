@@ -22,7 +22,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal ([@soloxsurfer](https://twitter.com/soloxsurfer)):**
+> ❤️ **A quick note from Vishal Beniwal ([@soloxsurfer](https://twitter.com/soloxsurfer)) on Twitter:**
 > If this guide helped you and you'd like to support me, I don't want any money—just keep me in your blessings for future success!
 
 ---
