@@ -2,11 +2,12 @@
 # ============================================================================
 # JioSTB C200A — Stage 1: ACS-based ADB Enable + Hardening
 #
-# Credits:
+# Credits & Maintenance:
+#   - Vishal Beniwal (aka ilikechocopies, @soloxsurfer on Twitter): Streamlining the process & maintenance
 #   - Bihaan Sen: Original research & Housekeeping-PoC
 #   - ak_0o7: Exploit finding
 #   - Otus9051: Consolidation
-#   - Vishal Beniwal (aka ilikechocopies): Streamlining the process
+#   - Pavit Chhabra (@mesosan16 on Twitter): JHS series support
 # ============================================================================
 #
 # ARCHITECTURE:
@@ -167,11 +168,12 @@ banner() {
     echo -e "${CYAN}║${NC}            ${BCYAN}JioSTB C200A — Stage 1: TR-069 ADB Enable${NC}                  ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                                       ║${NC}"
     echo -e "${CYAN}║  ${BYELLOW}★ Streamlined & Maintained by:${NC}                                       ${CYAN}║${NC}"
-    echo -e "${CYAN}║    ${BMAGENTA}✦ ${BWHITE}Vishal Beniwal ${BYELLOW}(aka ilikechocopies)${NC}                              ${CYAN}║${NC}"
+    echo -e "${CYAN}║    ${BMAGENTA}✦ ${BWHITE}Vishal Beniwal ${BYELLOW}(aka ilikechocopies / @soloxsurfer)${NC}              ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                                       ║${NC}"
-    echo -e "${CYAN}║  ${BCYAN}Credits & Original Research:${NC}                                         ${CYAN}║${NC}"
+    echo -e "${CYAN}║  ${BCYAN}Credits & Contributors:${NC}                                              ${CYAN}║${NC}"
     echo -e "${CYAN}║    • ${BWHITE}Bihaan Sen, ak_0o7${NC} (Research & Exploit)                          ${CYAN}║${NC}"
     echo -e "${CYAN}║    • ${BWHITE}Otus9051${NC} (Consolidation)                                         ${CYAN}║${NC}"
+    echo -e "${CYAN}║    • ${BWHITE}Pavit Chhabra${NC} (${BYELLOW}@mesosan16${NC} on Twitter - JHS support)              ${CYAN}║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
 }
 
@@ -351,7 +353,9 @@ if [ "$SKIP_PREREQS" = false ]; then
     if [ "$TLS_RUNNING" = false ]; then
         if [ -f "$TLS_DIR/pass_front.py" ]; then
             echo -ne "  ${CYAN}Starting pass_front.py...${NC} "
-            "$PY" "$TLS_DIR/pass_front.py" </dev/null >>"$TLS_DIR/pass_front.log" 2>&1 &
+            # Honour a custom TLS_CERT (e.g. a chain generated for JHS-series boxes)
+            TLS_CERT="${TLS_CERT:-$TLS_DIR/acs_chain.pem}" \
+                "$PY" "$TLS_DIR/pass_front.py" </dev/null >>"$TLS_DIR/pass_front.log" 2>&1 &
             PASS_FRONT_PID=$!
             echo "$PASS_FRONT_PID" > "$TLS_DIR/pass_front.pid"
             sleep 2
@@ -779,13 +783,22 @@ adb_sh "settings put global device_provisioned 1"
 adb_sh "settings put global development_settings_enabled 1"
 log "Device provisioned + Developer Options enabled"
 
-# Disable main OTA update services
-adb_sh "pm disable-user --user 0 com.jio.httpupdate"
-adb_sh "pm disable-user --user 0 com.jio.usbupdate"
-log "OTA update services disabled (httpupdate, usbupdate)"
+# Disable main OTA update services.
+# Package names differ per box family: JMSC/JMSB use com.jio.* names, while the
+# JHS series (JioOS 2.0) has none of those and uses com.iwedia.* services instead.
+# Try both families and tolerate packages that do not exist on each model, so
+# the script works unchanged on both.
+for pkg in com.jio.httpupdate com.jio.usbupdate \
+           com.iwedia.httpupdate com.iwedia.updateservice \
+           com.iwedia.pvodupdateservice com.iwedia.updatercuotaservice; do
+    adb_sh "pm disable-user --user 0 $pkg" >/dev/null 2>&1 || true
+done
+log "OTA update services disabled (httpupdate, usbupdate / iwedia services)"
 
 # Clear any staged update files already downloaded
-adb_sh "pm clear com.jio.httpupdate"
+adb_sh "pm clear com.jio.httpupdate" >/dev/null 2>&1 || true
+adb_sh "pm clear com.iwedia.httpupdate" >/dev/null 2>&1 || true
+adb_sh "pm clear com.iwedia.updateservice" >/dev/null 2>&1 || true
 log "Staged update files cleared"
 
 # Disable remote TR-069 push and remote command triggers (safety gated)
@@ -899,8 +912,9 @@ echo "    - Jio Ad Service uninstalled"
 [ "$APK_COUNT" -gt 0 ] && echo "    - $APK_COUNT app(s) installed"
 echo ""
 echo -e "${BYELLOW}★ Process Streamlined & Maintained by:${NC}"
-echo -e "  ${BMAGENTA}✦ ${BWHITE}Vishal Beniwal ${BYELLOW}(aka ilikechocopies)${NC}"
+echo -e "  ${BMAGENTA}✦ ${BWHITE}Vishal Beniwal ${BYELLOW}(aka ilikechocopies / @soloxsurfer on Twitter)${NC}"
 echo ""
-echo -e "${BCYAN}Original Research & Tools:${NC}"
+echo -e "${BCYAN}Credits & Contributors:${NC}"
 echo -e "  • Bihaan Sen, ak_0o7 (Research & Exploit)"
 echo -e "  • Otus9051 (Tool Consolidation)"
+echo -e "  • Pavit Chhabra (@mesosan16 on Twitter - JHS series support)"
