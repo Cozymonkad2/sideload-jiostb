@@ -74,12 +74,8 @@ Install these utilities on your Windows 11 system before starting:
 
 ## 📦 Repository Setup
 
-1. Grab the repository ZIP from [Housekeeping-PoC](https://github.com/JFC-Group/Housekeeping-PoC).
+1. Grab the repository ZIP from Here
 2. Extract the archive into your `Downloads` directory.
-3. Rename the extracted folder to:
-   ```text
-   sideload-jiostb
-   ```
 
 ## 🚀 Step-by-Step Guide
 
@@ -152,7 +148,7 @@ Launch **Docker Desktop** from the Start Menu and wait until the engine status s
 Open File Explorer, go to `sideload-jiostb/tls`, type `cmd` in the address bar, and press Enter:
 
 ```cmd
-docker compose up -d
+docker-compose up -d
 ```
 
 ### Step 8: Launch Proxy Listener
