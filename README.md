@@ -166,12 +166,6 @@ python pass_front.py
 
 1. Open the root folder `sideload-jiostb`.
 2. Right-click blank space $\rightarrow$ **Show more options** $\rightarrow$ **Open Git Bash here**.
-3. *(Optional but highly recommended)* Verify the PC-side chain:
-   ```bash
-   python doctor.py --quick
-   python doctor.py --simulate
-   ```
-   `--simulate` sends a synthetic Inform through the TLS front and GenieACS, proving your PC setup is 100% operational before you touch the TV!
 
 ### Step 10: Execute Stage 1
 
