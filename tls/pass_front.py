@@ -35,18 +35,32 @@ LOG = _args.log or os.environ.get("TLS_LOG", os.path.join(_DIR, "pass_front.log"
 import base64
 try:
     from Crypto.Cipher import AES
-    _HAVE_AES=True
-except Exception:
-    _HAVE_AES=False
-NETCHECK_KEY=b"6bm2I7pTdBaeABX0"; NETTYPE="FTTH"   # fleet-wide prod secretKey; FTTH = JioFiber STB
+    _HAVE_AES = True
+except Exception as _e:
+    _HAVE_AES = False
+
+NETCHECK_KEY = b"6bm2I7pTdBaeABX0"; NETTYPE = "FTTH"   # fleet-wide prod secretKey; FTTH = JioFiber STB
+
+# Pre-computed AES-CBC blob for NETTYPE ("FTTH"), used when pycryptodome is missing.
+# The STB only decrypts this token, so a fixed IV is harmless and removes a hard
+# dependency on Crypto.
+_PRECOMPUTED_NETCHECK = "UzLgdFHvJkBfRQiHnNQit+55dub3o1PbxIhuNZ7oJc8="
+
 def _forge_netcheck():
-    iv=os.urandom(16); data=NETTYPE.encode(); pl=16-(len(data)%16); data+=bytes([pl])*pl
-    ct=AES.new(NETCHECK_KEY,AES.MODE_CBC,iv).encrypt(data)
-    return base64.b64encode(iv+ct).decode()
-loglock=threading.Lock()
+    if not _HAVE_AES:
+        return _PRECOMPUTED_NETCHECK
+    iv = os.urandom(16); data = NETTYPE.encode(); pl = 16 - (len(data) % 16); data += bytes([pl]) * pl
+    ct = AES.new(NETCHECK_KEY, AES.MODE_CBC, iv).encrypt(data)
+    return base64.b64encode(iv + ct).decode()
+
+loglock = threading.Lock()
 def log(m):
     with loglock:
-        with open(LOG,"a") as f: f.write(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]}] {m}\n")
+        try:
+            with open(LOG, "a", encoding="utf-8", errors="replace") as f:
+                f.write(f"[{datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]}] {m}\n")
+        except Exception:
+            pass
 
 ctx=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.load_cert_chain(CERT)
 try: ctx.set_ciphers("DEFAULT:@SECLEVEL=0")
@@ -78,8 +92,14 @@ def read_http(rf):
     return reqline, headers, body
 
 def handle(conn, addr):
-    try: s=ctx.wrap_socket(conn, server_side=True)
-    except Exception as e: log(f"TLS fail {addr}: {e}"); conn.close(); return
+    log(f"TCP accept from {addr[0]}:{addr[1]}")
+    try:
+        s=ctx.wrap_socket(conn, server_side=True)
+    except Exception as e:
+        log(f"TLS fail {addr[0]}:{addr[1]} (a client reached us but the handshake failed): {type(e).__name__}: {e}")
+        try: conn.close()
+        except Exception: pass
+        return
     rf=s.makefile("rb"); cid=f"{addr[0]}:{addr[1]}"
     try:
         while True:
@@ -93,11 +113,11 @@ def handle(conn, addr):
             if rb and len(rb)<1600: log(f"{cid} >>> body: {rb.decode('latin1','replace')}")
             # netcheck short-circuit: /common/v1/network/check gates CWMP -> serve valid Network, don't proxy
             _parts=reqline.split(" "); _path=_parts[1] if len(_parts)>1 else ""
-            if "network/check" in _path and _HAVE_AES:
+            if "network/check" in _path:
                 _nb=('{"Network":"%s"}' % _forge_netcheck()).encode()
                 s.sendall(("\r\n".join(["HTTP/1.1 200 OK","Content-Type: application/json",
                     "Content-Length: %d"%len(_nb),"Connection: keep-alive"])+"\r\n\r\n").encode()+_nb)
-                log(f"{cid} <<< 200 netcheck-spoof Network={NETTYPE}")
+                log(f"{cid} <<< 200 netcheck-spoof Network={NETTYPE} (using {'dynamic AES' if _HAVE_AES else 'precomputed fallback'})")
                 continue
             # pick/create the upstream GenieACS connection sticky to this session cookie
             with REG:
@@ -152,10 +172,40 @@ def serve_port(port):
     while True:
         c,a=srv.accept(); threading.Thread(target=handle,args=(c,a),daemon=True).start()
 
-ports_str = ",".join(str(p) for p in PORTS)
-print(f"pass_front: :{ports_str} -> GenieACS {GENIE[0]}:{GENIE[1]}  cert={CERT}")
-log(f"### pass_front (cookie-sticky, RILROOTCA chain) ports=[{ports_str}] -> GenieACS {GENIE} ###")
+def get_lan_ips():
+    ips = set()
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ips.add(s.getsockname()[0])
+        s.close()
+    except Exception:
+        pass
+    try:
+        for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+            ip = info[4][0]
+            if not ip.startswith("127."):
+                ips.add(ip)
+    except Exception:
+        pass
+    return sorted(list(ips)) or ["127.0.0.1"]
 
-for port in PORTS[:-1]:
-    threading.Thread(target=serve_port, args=(port,), daemon=True).start()
-serve_port(PORTS[-1])
+def start_server():
+    ports_str = ",".join(str(p) for p in PORTS)
+    lan_ips_str = ", ".join(get_lan_ips())
+    print(f"pass_front: ports=[{ports_str}] -> GenieACS {GENIE[0]}:{GENIE[1]}  cert={CERT}")
+    print(f"  LAN IPs to put in STB DNS record: {lan_ips_str}")
+    if _HAVE_AES:
+        print("  netcheck spoof: pycryptodome (dynamic AES-CBC)")
+    else:
+        print("  netcheck spoof: precomputed blob (pycryptodome not installed - OK)")
+    log(f"### pass_front (cookie-sticky, RILROOTCA chain) ports=[{ports_str}] -> GenieACS {GENIE} ###")
+    log(f"LAN IPs: {lan_ips_str}")
+    log(f"netcheck spoof: {'pycryptodome' if _HAVE_AES else 'precomputed blob'}")
+
+    for port in PORTS[:-1]:
+        threading.Thread(target=serve_port, args=(port,), daemon=True).start()
+    serve_port(PORTS[-1])
+
+if __name__ == "__main__":
+    start_server()

@@ -334,3 +334,11 @@
 [19:33:08.341] TLS fail ('127.0.0.1', 65232): [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
 [19:53:54.727] TLS fail ('127.0.0.1', 51117): [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
 [19:53:54.994] TLS fail ('127.0.0.1', 51118): [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1081)
+[19:23:06.680] ### pass_front (cookie-sticky, RILROOTCA chain) ports=[8443,9443] -> GenieACS ('127.0.0.1', 7547) ###
+[19:23:06.682] ### listening on 0.0.0.0:8443 -> GenieACS 127.0.0.1:7547 ###
+[19:23:06.683] ### listening on 0.0.0.0:9443 -> GenieACS 127.0.0.1:7547 ###
+[09:41:14.990] ### pass_front (cookie-sticky, RILROOTCA chain) ports=[8443,9443] -> GenieACS ('127.0.0.1', 7547) ###
+[09:41:14.991] LAN IPs: 192.168.31.8
+[09:41:14.992] netcheck spoof: precomputed blob
+[09:41:14.994] ### listening on 0.0.0.0:8443 -> GenieACS 127.0.0.1:7547 ###
+[09:41:14.994] ### listening on 0.0.0.0:9443 -> GenieACS 127.0.0.1:7547 ###

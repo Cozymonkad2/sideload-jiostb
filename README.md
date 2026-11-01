@@ -1,4 +1,4 @@
-# Jio STB ADB Setup Guide (Windows 11 & 10)
+# Jio STB ADB Setup Guide (Windows 11)
 
 A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on supported Jio Set-Top Boxes using a Windows 11 PC and a local Wi-Fi router.
 
@@ -34,10 +34,10 @@ A beginner-friendly, clutter-free walkthrough to enable **ADB debugging** on sup
 Once you execute Stage 1, the script performs several handy quality-of-life modifications on your Jio STB:
 
 * 🔓 **ADB Enabled:** Network ADB is activated so you can manage and sideload apps.
-* 🚀 **Monet Launcher Installed:** Replaces the cluttered default view with a clean, customizable launcher.
-* ⚡ **Shizuku Installed:** Pre-installed on the box to allow compatible apps to use system APIs directly with ADB-level privileges.
+* 🚀 **Monet Launcher Activated:** Replaces the cluttered default view with a clean, customizable launcher. Stock launcher is suspended to prevent boot ad reversion.
+* ⚡ **Shevery (Shizuku-Compatible API) Installed:** Standalone Shizuku-compatible manager allowing supported apps to access privileged APIs over ADB.
 * 🛑 **Automatic Firmware Updates Blocked:** OTA auto-updates are disabled so your setup doesn't get overwritten.
-* 🚫 **Startup Boot Ads Disabled:** Annoying commercial popup ads that display when powering on the STB are suppressed.
+* 🚫 **Startup Boot Ads Disabled:** Annoying commercial promo and intro ads that display when powering on the STB are suppressed.
 
 ## ⚡ Quick Navigation
 
@@ -47,7 +47,7 @@ Once you execute Stage 1, the script performs several handy quality-of-life modi
   * [1. Network Pairing](#step-1-network-pairing)
   * [2. Get Host IP](#step-2-get-host-ip)
   * [3. Configure STB DNS via USB Bug](#step-3-configure-stb-dns-via-usb-bug)
-  * [4. Isolate Network](#step-4-isolate-network)
+  * [4. Isolate Network & Disable Firewall](#step-4-isolate-network--temporarily-disable-windows-firewall)
   * [5. Run Docker](#step-5-run-docker)
   * [6. Setup Technitium DNS](#step-6-setup-technitium-dns)
   * [7. Deploy TLS Containers](#step-7-deploy-tls-containers)
@@ -55,6 +55,7 @@ Once you execute Stage 1, the script performs several handy quality-of-life modi
   * [9. Initialize Git Bash](#step-9-initialize-git-bash)
   * [10. Execute Stage 1](#step-10-execute-stage-1)
   * [11. Verify Connection](#step-11-verify-connection)
+  * [12. Teardown & Reset](#step-12-teardown--reset)
 * [Installing Apps via ADB](#-how-to-install-apps-via-adb)
 * [Important Disclaimers](#-important-disclaimers)
 * [Credits & Acknowledgments](#-credits--acknowledgments)
@@ -73,8 +74,12 @@ Install these utilities on your Windows 11 system before starting:
 
 ## 📦 Repository Setup
 
-1. Download this repository as a ZIP
+1. Grab the repository ZIP from [Housekeeping-PoC](https://github.com/JFC-Group/Housekeeping-PoC).
 2. Extract the archive into your `Downloads` directory.
+3. Rename the extracted folder to:
+   ```text
+   sideload-jiostb
+   ```
 
 ## 🚀 Step-by-Step Guide
 
@@ -110,35 +115,44 @@ Locate **Wireless LAN adapter Wi-Fi** and copy your **IPv4 Address** (e.g., `192
 > [!WARNING]
 > If the Gateway or IP fields auto-clear upon selecting Static, switch back to DHCP, note the default values, switch to Static, and re-enter them manually before saving.
 
-### Step 4: Isolate Network
+### Step 4: Isolate Network & Temporarily Disable Windows Firewall
 
-Unplug the **WAN / incoming fiber cable** from your router.
+1. **Unplug Internet Cable:**
+   Unplug the **WAN / incoming fiber cable** from your router.
+   * Keep the router powered on.
+   * Both devices must communicate over the local subnet without active internet access.
 
-* Keep router powered on.
-* Both devices must communicate over the local subnet without active internet access.
+2. **Temporarily Disable Windows Defender Firewall:**
+   > [!IMPORTANT]
+   > Windows Firewall frequently blocks incoming traffic from the STB on port **53** (DNS) and port **8443/9443** (TLS proxy), causing the exploit to silently fail. You must temporarily disable it:
+   >
+   > 1. Press `Win + R`, type `firewall.cpl`, and press **Enter**.
+   > 2. Click **"Turn Windows Defender Firewall on or off"** on the left menu.
+   > 3. Select **"Turn off Windows Defender Firewall (not recommended)"** for both *Private* and *Public* network settings.
+   > 4. Click **OK**. *(You will turn it back on in Step 12 once finished.)*
 
 ### Step 5: Run Docker
 
 Launch **Docker Desktop** from the Start Menu and wait until the engine status switches to running.
 
 ### Step 6: Setup Technitium DNS
-1. Run Technitium DNS server app (Nothing will show up on screen but don't worry its running in background)
-2. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380). (if this url doesn't open then in bottom right corner of task bar there is system tray open that right click on the tiny DNS server app logo then click on dashboard)
-3. Go to **Zones** $\rightarrow$ Click **Add Zone**:
+
+1. Open the Technitium console at [`http://localhost:5380`](http://localhost:5380).
+2. Go to **Zones** $\rightarrow$ Click **Add Zone**:
    * **Zone Name:** `jio.com`
    * **Zone Type:** `Primary Zone`
-4. Click into `jio.com` $\rightarrow$ Click **Add Record**:
+3. Click into `jio.com` $\rightarrow$ Click **Add Record**:
    * **Name:** `acs.oss`
    * **Type:** `A`
    * **IP Address:** *Your Windows 11 IPv4 Address*
-5. Save the record and ensure the zone is **Enabled**.
+4. Save the record and ensure the zone is **Enabled**.
 
 ### Step 7: Deploy TLS Containers
 
 Open File Explorer, go to `sideload-jiostb/tls`, type `cmd` in the address bar, and press Enter:
 
 ```cmd
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Step 8: Launch Proxy Listener
@@ -150,18 +164,18 @@ python -m pip install pycryptodome
 python pass_front.py
 ```
 
-*(Keep this window open and running.)*
+*(Leave this window open. Note: `pass_front.py` includes an automatic precomputed fallback so it continues to work reliably even if `pycryptodome` is absent.)*
 
-### Step 9: Initialize Git Bash
+### Step 9: Initialize Git Bash & Health Check
 
 1. Open the root folder `sideload-jiostb`.
 2. Right-click blank space $\rightarrow$ **Show more options** $\rightarrow$ **Open Git Bash here**.
-3. Prepare the environment:
+3. *(Optional but highly recommended)* Verify the PC-side chain:
    ```bash
-   export PATH=$PATH:.
-   adb version
-   chmod +x stage1.sh
+   python doctor.py --quick
+   python doctor.py --simulate
    ```
+   `--simulate` sends a synthetic Inform through the TLS front and GenieACS, proving your PC setup is 100% operational before you touch the TV!
 
 ### Step 10: Execute Stage 1
 
@@ -174,18 +188,27 @@ Ensure Docker, Technitium, and `pass_front.py` are active, then run:
 Select your STB when prompted. To run only the required payload without stripping extras, you can alternatively use:
 
 ```bash
-./stage1.sh
+./stage1.sh --tasks-only
 ```
 
-Once finished, power-cycle the STB:
+> [!IMPORTANT]
+> **Cold Power-Cycle Is Mandatory (Unplug Wall Power):**
+> The Jio STB only contacts the ACS server during **boot**. Its periodic background check-in takes hours, and remote wake is impossible because `NATDetected=True` closes incoming port 7547 on the STB.
+>
+> 1. Unplug the STB power adapter from the wall (do not just put it in standby with the remote).
+> 2. Wait 5 seconds $\rightarrow$ Plug it back in.
+> 3. Allow it to boot up completely.
 
-1. Pull the STB power cord.
-2. Wait 5 seconds $\rightarrow$ Plug it back in.
-3. Allow it to boot up completely.
+### Step 11: Verify ADB Connection
 
-### Step 11: Verify Connection
+> [!NOTE]
+> **"Allow USB Debugging?" Dialog on TV:**
+> No prompt will appear on your TV until the STB boots and applies the CWMP task. Once connected, your TV screen will display an RSA key prompt.
+> Check **"Always allow from this computer"** and select **OK**.
+>
+> If running `adb connect` initially shows `failed to authenticate` or `unauthorized`, that is completely normal before you click OK on the TV. Simply run `adb connect <STB_IP>:5555` again after approving.
 
-In Git Bash, confirm the daemon detects your hardware:
+In Git Bash, confirm your connection:
 
 ```bash
 adb devices
@@ -195,14 +218,27 @@ Your device should now be listed with the status **`device`**.
 
 ### Step 12: Teardown & Reset
 
-Once ADB is confirmed:
+Once ADB is confirmed and your setup is complete:
 
-1. Press `Ctrl + C` in the `pass_front.py` terminal to stop it.
-2. In Git Bash, terminate containers:
+1. Stop `pass_front.py` by pressing `Ctrl + C` in its window (or run `./stage1.sh --stop`).
+2. In Git Bash, terminate Docker containers:
    ```bash
    docker compose down
    ```
 3. Reconnect your router's incoming WAN/Internet cable.
+4. **Turn Windows Defender Firewall back on:** Press `Win + R` $\rightarrow$ `firewall.cpl` $\rightarrow$ Turn Windows Defender Firewall back on.
+
+### 🧰 Advanced CLI Options for `stage1.sh`
+
+| Option | Purpose |
+|---|---|
+| `./stage1.sh --doctor` | Run full diagnostic checklist of ports, NBI, and DNS |
+| `./stage1.sh --simulate` | Test synthetic CWMP session through TLS front & GenieACS |
+| `./stage1.sh --watch` | Real-time watcher polling for STB Inform and port 5555 |
+| `./stage1.sh --tasks` | Inspect all pending TR-069 tasks queued for your STB |
+| `./stage1.sh --clear-tasks` | Clear duplicate or stale tasks from GenieACS queue |
+| `./stage1.sh --stop` | Stop background `pass_front.py` process |
+| `./stage1.sh --yes-disable-tr069` | Explicitly permit disabling `com.jio.tr069client` in Stage 6 |
 
 ## 📲 How to Install Apps via ADB
 

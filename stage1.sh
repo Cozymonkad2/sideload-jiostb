@@ -45,6 +45,36 @@
 
 set -euo pipefail
 
+# ── PATH & Binary Resolution ──────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+TLS_DIR="$SCRIPT_DIR/tls"
+
+case ":$PATH:" in
+    *":$SCRIPT_DIR:"*) ;;
+    *) PATH="$SCRIPT_DIR:$PATH"; export PATH ;;
+esac
+
+ADB_BIN="$SCRIPT_DIR/adb.exe"
+if [ ! -f "$ADB_BIN" ] && [ ! -x "$ADB_BIN" ]; then
+    ADB_BIN="adb"
+fi
+
+# ── Python Interpreter Resolution ─────────────────────────────
+pick_python() {
+    local c
+    for c in python3 python py; do
+        if command -v "$c" >/dev/null 2>&1 && "$c" -c "import Crypto" >/dev/null 2>&1; then
+            echo "$c"; return 0
+        fi
+    done
+    for c in python3 python py; do
+        if command -v "$c" >/dev/null 2>&1; then echo "$c"; return 0; fi
+    done
+    return 1
+}
+PY="$(pick_python)" || { echo "  Python not found — install Python 3 and tick 'Add to PATH'"; exit 1; }
+export PY
+
 # ── Colors ──────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; NC='\033[0m'
@@ -60,10 +90,15 @@ STB_IP="${STB_IP:-}"
 SKIP_PREREQS=false
 LIST_ONLY=false
 TASKS_ONLY=false
+DOCTOR=false
+WATCH_MODE=false
+SIMULATE_MODE=false
+SHOW_TASKS=false
+CLEAR_TASKS=false
+STOP_FRONT=false
+YES_DISABLE_TR069=false
 ADB_PORT=5555
 INFORM_INTERVAL=360
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TLS_DIR="$SCRIPT_DIR/tls"
 STALE_THRESHOLD=900  # 15 minutes — device not seen since = stale
 
 # ── Argument parsing ───────────────────────────────────────────
@@ -71,29 +106,43 @@ usage() {
     echo "Usage: $0 [OPTIONS] [NBI_URL] [DEVICE_ID]"
     echo ""
     echo "Options:"
-    echo "  --nbi URL         GenieACS NBI endpoint"
-    echo "  --device ID       Full device ID (skip discovery)"
-    echo "  --serial SN       STB serial number (matches against device IDs)"
-    echo "  --stb-ip IP       STB LAN IP for ADB connection"
-    echo "  --tls-port PORT   TLS front-end port (default: 8443)"
-    echo "  --list-devices    List devices in GenieACS and exit"
-    echo "  --tasks-only      Queue TR-069 tasks only, skip ADB"
-    echo "  --skip-prereqs    Skip prerequisite checks"
-    echo "  -h, --help        Show this help"
+    echo "  --nbi URL             GenieACS NBI endpoint"
+    echo "  --device ID           Full device ID (skip discovery)"
+    echo "  --serial SN           STB serial number (matches against device IDs)"
+    echo "  --stb-ip IP           STB LAN IP for ADB connection"
+    echo "  --tls-port PORT       TLS front-end port (default: 8443)"
+    echo "  --list-devices        Run health check, list devices in GenieACS and exit"
+    echo "  --tasks-only          Queue TR-069 tasks only, skip ADB"
+    echo "  --skip-prereqs        Skip prerequisite checks"
+    echo "  --doctor              Run chain diagnostic health check"
+    echo "  --watch               Watch for STB Inform connection in real-time"
+    echo "  --simulate            Simulate synthetic CWMP Inform to prove PC chain"
+    echo "  --tasks               Show active tasks queued for the STB"
+    echo "  --clear-tasks         Clear pending tasks queued for the STB"
+    echo "  --stop, --stop-front  Stop background pass_front.py process"
+    echo "  --yes-disable-tr069   Confirm disabling com.jio.tr069client in Stage 6"
+    echo "  -h, --help            Show this help"
     exit 0
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --nbi)          NBI_URL="$2"; shift 2 ;;
-        --device)       DEVICE_ID="$2"; shift 2 ;;
-        --serial)       SERIAL="$2"; shift 2 ;;
-        --stb-ip)       STB_IP="$2"; shift 2 ;;
-        --tls-port)     TLS_PORT="$2"; shift 2 ;;
-        --skip-prereqs) SKIP_PREREQS=true; shift ;;
-        --list-devices) LIST_ONLY=true; shift ;;
-        --tasks-only)   TASKS_ONLY=true; shift ;;
-        -h|--help)      usage ;;
+        --nbi)               NBI_URL="$2"; shift 2 ;;
+        --device)            DEVICE_ID="$2"; shift 2 ;;
+        --serial)            SERIAL="$2"; shift 2 ;;
+        --stb-ip)            STB_IP="$2"; shift 2 ;;
+        --tls-port)          TLS_PORT="$2"; shift 2 ;;
+        --skip-prereqs)      SKIP_PREREQS=true; shift ;;
+        --list-devices)      LIST_ONLY=true; shift ;;
+        --tasks-only)        TASKS_ONLY=true; shift ;;
+        --doctor)            DOCTOR=true; shift ;;
+        --watch)             WATCH_MODE=true; shift ;;
+        --simulate)          SIMULATE_MODE=true; shift ;;
+        --tasks)             SHOW_TASKS=true; shift ;;
+        --clear-tasks)       CLEAR_TASKS=true; shift ;;
+        --stop|--stop-front) STOP_FRONT=true; shift ;;
+        --yes-disable-tr069) YES_DISABLE_TR069=true; shift ;;
+        -h|--help)           usage ;;
         *)
             if [[ "$1" == http* ]]; then NBI_URL="$1"
             elif [[ -z "$DEVICE_ID" && "$1" != -* ]]; then DEVICE_ID="$1"
@@ -108,10 +157,10 @@ warn() { echo -e "  ${YELLOW}!${NC} $*"; }
 fail() { echo -e "  ${RED}✗${NC} $*"; }
 die()  { fail "$@"; exit 1; }
 
-json_py() { python3 -c "import sys,json; $1" 2>/dev/null; }
+json_py() { "$PY" -c "import sys,json; $1" 2>/dev/null; }
 
 # URL-encode a device ID for NBI paths
-url_encode() { python3 -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(),safe=''))" <<< "$1"; }
+url_encode() { "$PY" -c "import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip(),safe=''))" <<< "$1"; }
 
 banner() {
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════════════════════╗${NC}"
@@ -125,6 +174,50 @@ banner() {
     echo -e "${CYAN}║    • ${BWHITE}Otus9051${NC} (Consolidation)                                         ${CYAN}║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════════════════════╝${NC}"
 }
+
+# Early routing commands (Doctor / Watch / Simulate / Stop)
+if [ "$STOP_FRONT" = true ]; then
+    echo -e "${YELLOW}Stopping pass_front.py processes...${NC}"
+    if [ -f "$TLS_DIR/pass_front.pid" ]; then
+        PID=$(cat "$TLS_DIR/pass_front.pid" 2>/dev/null || true)
+        if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
+            kill "$PID" 2>/dev/null || true
+            rm -f "$TLS_DIR/pass_front.pid"
+            log "pass_front.py (PID $PID) stopped."
+        fi
+    fi
+    "$PY" -c "
+import os, sys
+try:
+    import psutil
+    for p in psutil.process_iter(['pid', 'name', 'cmdline']):
+        cmd = ' '.join(p.info.get('cmdline') or [])
+        if 'pass_front.py' in cmd:
+            p.terminate()
+            print(f'Terminated pass_front process PID {p.pid}')
+except Exception:
+    pass
+" 2>/dev/null || true
+    echo -e "${GREEN}Done.${NC}"
+    exit 0
+fi
+
+if [ "$DOCTOR" = true ]; then
+    "$PY" "$SCRIPT_DIR/doctor.py" --nbi "$NBI_URL" --tls-port "$TLS_PORT" ${STB_IP:+--stb-ip "$STB_IP"}
+    exit $?
+fi
+
+if [ "$SIMULATE_MODE" = true ]; then
+    "$PY" "$SCRIPT_DIR/doctor.py" --simulate --nbi "$NBI_URL" --tls-port "$TLS_PORT"
+    exit $?
+fi
+
+if [ "$WATCH_MODE" = true ]; then
+    "$PY" "$SCRIPT_DIR/doctor.py" --watch --nbi "$NBI_URL" ${STB_IP:+--stb-ip "$STB_IP"}
+    exit $?
+fi
+
+banner
 
 queue_task() {
     local desc="$1"
@@ -142,27 +235,67 @@ queue_task() {
     esac
 }
 
-banner
+queue_task_once() {
+    local desc="$1"
+    local match_target="$2"
+    local payload="$3"
+
+    local existing_tasks
+    existing_tasks=$(curl -s "$NBI_URL/tasks/?query=%7B%22device%22%3A%22$DEV_ENC%22%7D" 2>/dev/null || echo "[]")
+
+    local already_queued
+    already_queued=$("$PY" -c "
+import sys, json
+try:
+    tasks = json.loads(sys.argv[1])
+    match = sys.argv[2]
+    for t in tasks:
+        if t.get('name') == match:
+            sys.exit(0)
+        for p in t.get('parameterValues', []):
+            if len(p) > 0 and match in str(p[0]):
+                sys.exit(0)
+except Exception:
+    pass
+sys.exit(1)
+" "$existing_tasks" "$match_target" && echo "yes" || echo "no")
+
+    if [ "$already_queued" = "yes" ]; then
+        log "$desc — already in queue, skipping duplicate"
+        return 0
+    fi
+
+    queue_task "$desc" "$payload"
+}
 
 # ═══════════════════════════════════════════════════════════════
 # [1/6] Prerequisite checks + auto-start services
 # ═══════════════════════════════════════════════════════════════
 PASS_FRONT_LAUNCHED=false
 PASS_FRONT_PID=""
+KEEP_PASS_FRONT=true
 
 cleanup() {
     if [ -n "$PASS_FRONT_PID" ] && kill -0 "$PASS_FRONT_PID" 2>/dev/null; then
-        echo ""
-        echo -e "  ${CYAN}Stopping pass_front.py (pid $PASS_FRONT_PID)...${NC}"
-        kill "$PASS_FRONT_PID" 2>/dev/null
-        wait "$PASS_FRONT_PID" 2>/dev/null
+        if [ "$KEEP_PASS_FRONT" = true ]; then
+            echo ""
+            echo -e "  ${CYAN}pass_front.py left running (pid $PASS_FRONT_PID) so the STB can keep informing.${NC}"
+            echo -e "  ${CYAN}Stop it later with:  kill $PASS_FRONT_PID  (or  $0 --stop)${NC}"
+        else
+            echo ""
+            echo -e "  ${CYAN}Stopping pass_front.py (pid $PASS_FRONT_PID)...${NC}"
+            kill "$PASS_FRONT_PID" 2>/dev/null || true
+            wait "$PASS_FRONT_PID" 2>/dev/null || true
+            rm -f "$TLS_DIR/pass_front.pid"
+        fi
     fi
 }
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'KEEP_PASS_FRONT=false; cleanup; exit 130' INT TERM
 
 port_open() {
-    python3 -c "
-import socket,sys; s=socket.socket(); s.settimeout(2)
+    "$PY" -c "
+import socket,sys; s=socket.socket(); s.settimeout(1.0)
 try:
     s.connect(('127.0.0.1',int(sys.argv[1])))
     s.close()
@@ -170,7 +303,7 @@ try:
 except ConnectionRefusedError:
     sys.exit(1)
 except Exception:
-    # TLS server accepted the TCP connection then killed it — port is open
+    # TLS server accepted connection then closed — port is open
     sys.exit(0)
 " "$1" 2>/dev/null
 }
@@ -178,10 +311,19 @@ except Exception:
 if [ "$SKIP_PREREQS" = false ]; then
     echo -e "${YELLOW}[1/6] Checking prerequisites...${NC}"
 
-    command -v curl >/dev/null 2>&1    || die "curl not found"
-    command -v python3 >/dev/null 2>&1 || die "python3 not found (needed for JSON + pass_front.py)"
+    command -v curl >/dev/null 2>&1 || die "curl not found"
+    command -v "$PY" >/dev/null 2>&1 || die "Python ($PY) not found"
+    
+    HAS_CRYPTO=$("$PY" -c "import Crypto; print('yes')" 2>/dev/null || echo "no")
+    if [ "$HAS_CRYPTO" = "yes" ]; then
+        log "Python interpreter: $PY (pycryptodome available)"
+    else
+        log "Python interpreter: $PY (pycryptodome not installed — precomputed token fallback active)"
+    fi
+
     if [ "$TASKS_ONLY" = false ]; then
-        command -v adb >/dev/null 2>&1 || die "adb not found (install android-tools, or use --tasks-only)"
+        command -v "$ADB_BIN" >/dev/null 2>&1 || die "adb not found ($ADB_BIN)"
+        log "ADB binary: $ADB_BIN"
     fi
 
     # GenieACS NBI reachable?
@@ -194,7 +336,6 @@ if [ "$SKIP_PREREQS" = false ]; then
     log "GenieACS NBI reachable ($NBI_URL)"
 
     # TLS front-end — auto-launch pass_front.py if not running
-    # Check both default ports (8443 and 9443)
     TLS_RUNNING=false
     if port_open 8443 && port_open 9443; then
         log "TLS front-end already listening on :8443 + :9443"
@@ -210,8 +351,9 @@ if [ "$SKIP_PREREQS" = false ]; then
     if [ "$TLS_RUNNING" = false ]; then
         if [ -f "$TLS_DIR/pass_front.py" ]; then
             echo -ne "  ${CYAN}Starting pass_front.py...${NC} "
-            python3 "$TLS_DIR/pass_front.py" </dev/null >>"$TLS_DIR/pass_front.log" 2>&1 &
+            "$PY" "$TLS_DIR/pass_front.py" </dev/null >>"$TLS_DIR/pass_front.log" 2>&1 &
             PASS_FRONT_PID=$!
+            echo "$PASS_FRONT_PID" > "$TLS_DIR/pass_front.pid"
             sleep 2
             if kill -0 "$PASS_FRONT_PID" 2>/dev/null && port_open 8443; then
                 if port_open 9443; then
@@ -235,7 +377,7 @@ if [ "$SKIP_PREREQS" = false ]; then
     if [ "$PASS_FRONT_LAUNCHED" = true ]; then
         echo -e "${YELLOW}  pass_front.py was just started.${NC}"
         echo -e "  ${CYAN}Make sure DNS redirect is active (acs.oss.jio.com -> your LAN IP),${NC}"
-        echo -e "  ${CYAN}then reboot the STB so it connects to your ACS.${NC}"
+        echo -e "  ${CYAN}then cold power-cycle the STB (unplug wall power) so it connects to your ACS.${NC}"
         echo ""
     fi
 else
@@ -251,7 +393,7 @@ echo -e "${YELLOW}[2/6] Finding device in GenieACS...${NC}"
 DEVICES_JSON=$(curl -s "$NBI_URL/devices/?projection=_id,_lastInform" 2>/dev/null || echo "[]")
 
 # Annotate each device with staleness + online status
-DEVICES_ANNOTATED=$(python3 -c "
+DEVICES_ANNOTATED=$("$PY" -c "
 import sys, json, datetime
 threshold = $STALE_THRESHOLD
 now = datetime.datetime.now(datetime.timezone.utc)
@@ -277,7 +419,7 @@ ONLINE_COUNT=$(json_py "print(sum(1 for d in json.load(sys.stdin) if d.get('_onl
 # Helper: format device list with status
 print_device_list() {
     local filter_arg="${1:-all}"  # "all" or "online"
-    python3 -c "
+    "$PY" -c "
 import sys, json
 filt = '$filter_arg'
 for i, d in enumerate(json.load(sys.stdin), 1):
@@ -300,8 +442,14 @@ for i, d in enumerate(json.load(sys.stdin), 1):
 }
 
 if [ "$LIST_ONLY" = true ]; then
+    echo -e "${CYAN}Checking PC-side chain before listing devices...${NC}"
+    "$PY" "$SCRIPT_DIR/doctor.py" --quick --nbi "$NBI_URL" --tls-port "$TLS_PORT" || true
+    echo ""
     if [ "$DEVICE_COUNT" = "0" ]; then
-        echo "  No devices found."
+        echo -e "${YELLOW}  No devices found in GenieACS.${NC}"
+        echo -e "  Note: The STB only connects on boot. If the PC chain is running,"
+        echo -e "  perform a cold power-cycle (unplug the STB power cord from the wall),"
+        echo -e "  wait 5 seconds, and plug it back in."
     else
         print_device_list all
     fi
@@ -315,15 +463,16 @@ if [ "$DEVICE_COUNT" = "0" ]; then
     echo -e "    1. DNS redirect active: ${CYAN}acs.oss.jio.com${NC} -> your host LAN IP"
     echo -e "    2. pass_front.py running on :$TLS_PORT"
     echo -e "    3. GenieACS Docker stack running (cwmp :7547, nbi :7557)"
-    echo -e "    4. Reboot the STB, then wait up to 6 minutes"
+    echo -e "    4. Cold power-cycle the STB (unplug wall power), then wait up to 6 minutes"
     echo ""
-    echo -e "  Then: ${CYAN}$0 --list-devices${NC}"
+    echo -e "  Diagnose PC-side chain: ${CYAN}$0 --doctor${NC}"
+    echo -e "  Test full fake Inform:  ${CYAN}$0 --simulate${NC}"
+    echo -e "  Watch for connection:   ${CYAN}$0 --watch${NC}"
     exit 1
 fi
 
 # --- Resolve device ID from --device, --serial, or interactive ---
 if [ -n "$DEVICE_ID" ]; then
-    # Explicit device ID — verify it exists
     EXISTS=$(json_py "
 d=json.load(sys.stdin)
 print('yes' if any(x['_id']=='$DEVICE_ID' for x in d) else 'no')
@@ -337,7 +486,6 @@ print('yes' if any(x['_id']=='$DEVICE_ID' for x in d) else 'no')
     log "Device found: $DEVICE_ID"
 
 elif [ -n "$SERIAL" ]; then
-    # Match serial against device IDs (format: OUI-Model-Serial)
     DEVICE_ID=$(json_py "
 import sys
 serial = '$SERIAL'
@@ -354,7 +502,6 @@ for d in json.load(sys.stdin):
     log "Matched serial $SERIAL -> $DEVICE_ID"
 
 else
-    # Interactive: prefer online devices, always show status
     if [ "$ONLINE_COUNT" = "1" ] && [ "$DEVICE_COUNT" = "1" ]; then
         DEVICE_ID=$(json_py "print(json.load(sys.stdin)[0]['_id'])" <<< "$DEVICES_ANNOTATED")
         log "Auto-selected device: $DEVICE_ID"
@@ -371,8 +518,7 @@ else
         read -r CHOICE
 
         if [ "$CHOICE" = "wait" ]; then
-            echo -e "  ${CYAN}Waiting for a device to connect (reboot the STB)...${NC}"
-            # Snapshot current _lastInform values to detect changes
+            echo -e "  ${CYAN}Waiting for a device to connect (cold reboot the STB)...${NC}"
             PREV_SNAPSHOT=$(json_py "
 d={x['_id']:x.get('_lastInform','') for x in json.load(sys.stdin)}
 print(repr(d))
@@ -381,7 +527,7 @@ print(repr(d))
                 sleep 5
                 printf "\r  Waiting... %ds" "$((attempt * 5))"
                 FRESH=$(curl -s "$NBI_URL/devices/?projection=_id,_lastInform" 2>/dev/null || echo "[]")
-                NEW_DEV=$(python3 -c "
+                NEW_DEV=$("$PY" -c "
 import sys, json
 prev = $PREV_SNAPSHOT
 devices = json.load(sys.stdin)
@@ -409,7 +555,6 @@ print(d[i]['_id'] if 0<=i<len(d) else '')
 " <<< "$DEVICES_ANNOTATED")
             [ -z "$DEVICE_ID" ] && die "Invalid selection."
         else
-            # Treat as serial number
             DEVICE_ID=$(json_py "
 serial = '$CHOICE'
 for d in json.load(sys.stdin):
@@ -440,7 +585,7 @@ for d in json.load(sys.stdin):
         break
 " <<< "$DEVICES_ANNOTATED")
     warn "Device last seen $DEVICE_AGE — it may be offline."
-    echo -e "  ${CYAN}Reboot the STB to force it to reconnect to your ACS.${NC}"
+    echo -e "  ${CYAN}Cold power-cycle the STB (unplug wall power) to force it to reconnect to your ACS.${NC}"
     echo -e "  ${CYAN}Tasks will queue and apply once it comes back online.${NC}"
     echo ""
 fi
@@ -451,13 +596,61 @@ echo -e "  ${CYAN}NBI:${NC}    $NBI_URL"
 echo -e "  ${CYAN}Device:${NC} $DEVICE_ID"
 echo ""
 
+# Tasks inspection / cleanup options
+if [ "$SHOW_TASKS" = true ]; then
+    echo -e "${CYAN}Current tasks in GenieACS queue for device $DEVICE_ID:${NC}"
+    "$PY" -c "
+import sys, json, urllib.request, urllib.parse
+nbi = '$NBI_URL'.rstrip('/')
+dev = urllib.parse.quote('$DEVICE_ID')
+url = f'{nbi}/tasks/?query=%7B%22device%22%3A%22{dev}%22%7D'
+try:
+    with urllib.request.urlopen(url) as r:
+        tasks = json.loads(r.read())
+        if not tasks:
+            print('  Queue is empty (no pending tasks).')
+        for i, t in enumerate(tasks, 1):
+            name = t.get('name', 'unknown')
+            fault = t.get('fault')
+            fault_str = f' [FAULT: {fault}]' if fault else ''
+            pvals = t.get('parameterValues', [])
+            p_str = ', '.join([f'{p[0]}={p[1]}' for p in pvals]) if pvals else ''
+            print(f'  {i}. {name} {p_str}{fault_str}')
+except Exception as e:
+    print('  Failed to query tasks:', e)
+"
+    exit 0
+fi
+
+if [ "$CLEAR_TASKS" = true ]; then
+    echo -e "${YELLOW}Clearing pending tasks for device $DEVICE_ID...${NC}"
+    "$PY" -c "
+import sys, json, urllib.request, urllib.parse
+nbi = '$NBI_URL'.rstrip('/')
+dev = urllib.parse.quote('$DEVICE_ID')
+url = f'{nbi}/tasks/?query=%7B%22device%22%3A%22{dev}%22%7D'
+try:
+    with urllib.request.urlopen(url) as r:
+        tasks = json.loads(r.read())
+        for t in tasks:
+            tid = t.get('_id')
+            if tid:
+                dreq = urllib.request.Request(f'{nbi}/tasks/{tid}', method='DELETE')
+                urllib.request.urlopen(dreq)
+        print(f'  Cleared {len(tasks)} task(s).')
+except Exception as e:
+    print('  Failed to clear tasks:', e)
+"
+    exit 0
+fi
+
 # ═══════════════════════════════════════════════════════════════
 # [3/6] Refresh device data model
 # ═══════════════════════════════════════════════════════════════
 echo -e "${YELLOW}[3/6] Refreshing device data model...${NC}"
 echo -e "  ${CYAN}Populates all TR-069 parameters from the device.${NC}"
 
-queue_task "refreshObject (full tree)" \
+queue_task_once "refreshObject (full tree)" "refreshObject" \
     '{"name":"refreshObject","objectName":""}'
 
 echo ""
@@ -467,24 +660,24 @@ echo ""
 # ═══════════════════════════════════════════════════════════════
 echo -e "${YELLOW}[4/6] Queuing TR-069 tasks...${NC}"
 echo -e "  ${CYAN}Tasks apply when the STB sends its next Inform (~${INFORM_INTERVAL}s).${NC}"
-echo -e "  ${CYAN}Reboot the STB to trigger an immediate Inform.${NC}"
+echo -e "  ${CYAN}Cold power-cycle the STB to trigger an immediate boot Inform.${NC}"
 echo ""
 
-queue_task "Enable USB Debugging" '{
+queue_task_once "Enable USB Debugging" "Device.JioSTB.USB.USBDebugging" '{
     "name":"setParameterValues",
     "parameterValues":[
         ["Device.JioSTB.USB.USBDebugging",true,"xsd:boolean"]
     ]
 }'
 
-queue_task "Set Debug Validity (2037)" '{
+queue_task_once "Set Debug Validity (2037)" "Device.JioSTB.USB.DebugValidityDate" '{
     "name":"setParameterValues",
     "parameterValues":[
         ["Device.JioSTB.USB.DebugValidityDate","2037-01-01T00:00:00.000Z","xsd:dateTime"]
     ]
 }'
 
-queue_task "Disable FOTA + Enable Downgrade" '{
+queue_task_once "Disable FOTA + Enable Downgrade" "Device.JioSTB.FOTA.Disable" '{
     "name":"setParameterValues",
     "parameterValues":[
         ["Device.JioSTB.FOTA.Disable","true","xsd:string"],
@@ -497,8 +690,8 @@ echo ""
 
 if [ "$TASKS_ONLY" = true ]; then
     echo -e "${GREEN}Tasks queued. The STB will apply them on its next Inform.${NC}"
-    echo -e "Reboot the STB to trigger an immediate Inform."
-    echo -e "Once ADB is enabled, connect: ${CYAN}adb connect <STB_IP>:$ADB_PORT${NC}"
+    echo -e "Cold power-cycle the STB (unplug wall power) to trigger an immediate Inform."
+    echo -e "Once ADB is enabled, connect: ${CYAN}$ADB_BIN connect <STB_IP>:$ADB_PORT${NC}"
     echo -e "Then re-run with ${CYAN}--skip-prereqs --stb-ip <IP>${NC} to finish post-setup."
     exit 0
 fi
@@ -512,7 +705,7 @@ ADB_TARGET=""
 
 # If no STB IP given, check for an already-connected device first, then ask
 if [ -z "$STB_IP" ]; then
-    EXISTING=$(adb devices 2>/dev/null | grep -E 'device$' | head -1 | awk '{print $1}' || true)
+    EXISTING=$("$ADB_BIN" devices 2>/dev/null | grep -E 'device$' | head -1 | awk '{print $1}' || true)
     if [ -n "$EXISTING" ]; then
         ADB_TARGET="$EXISTING"
         STB_IP="${EXISTING%%:*}"
@@ -527,37 +720,43 @@ fi
 
 if [ -z "$ADB_TARGET" ]; then
     ADB_TARGET="$STB_IP:$ADB_PORT"
-    echo -e "  ${CYAN}Trying adb connect $ADB_TARGET ... (Ctrl+C to abort)${NC}"
+    echo -e "  ${CYAN}Trying $ADB_BIN connect $ADB_TARGET ... (Ctrl+C to abort)${NC}"
     FOUND=0
     for i in $(seq 1 60); do
-        if adb connect "$ADB_TARGET" 2>/dev/null | grep -q "connected"; then
+        OUT=$("$ADB_BIN" connect "$ADB_TARGET" 2>&1 || true)
+        if echo "$OUT" | grep -qi "connected"; then
             FOUND=1; break
         fi
         printf "\r  Attempt %d/60 (%ds)..." "$i" "$((i * 5))"
         sleep 5
     done
     echo ""
-    [ "$FOUND" = "0" ] && die "Could not connect to $ADB_TARGET — is ADB enabled on the STB?"
+    [ "$FOUND" = "0" ] && die "Could not connect to $ADB_TARGET — is ADB enabled and STB booted?"
 fi
 
 log "ADB connected ($ADB_TARGET)"
 
 adb_cmd() {
     if [ -n "$ADB_TARGET" ]; then
-        adb -s "$ADB_TARGET" "$@" 2>/dev/null
+        "$ADB_BIN" -s "$ADB_TARGET" "$@" 2>/dev/null
     else
-        adb "$@" 2>/dev/null
+        "$ADB_BIN" "$@" 2>/dev/null
     fi
 }
 
-# Wait for ADB authorization — the TV shows an RSA key prompt on first connect
+# Wait for ADB authorization — TV displays an RSA key prompt on first connect
 ADB_STATE=$(adb_cmd get-state || echo "unknown")
 if [ "$ADB_STATE" != "device" ]; then
     echo -e "  ${YELLOW}Waiting for ADB authorization...${NC}"
-    echo -e "  ${CYAN}Check the TV — accept the RSA key prompt when it appears.${NC}"
+    echo -e "  ${CYAN}Check your TV screen — accept the RSA key prompt when it appears.${NC}"
+    echo -e "  ${CYAN}(Note: 'unauthorized' status is normal until you accept the prompt on TV)${NC}"
     for i in $(seq 1 60); do
         ADB_STATE=$(adb_cmd get-state || echo "unknown")
-        [ "$ADB_STATE" = "device" ] && break
+        if [ "$ADB_STATE" = "device" ]; then break; fi
+        if [ "$ADB_STATE" = "unauthorized" ] && [ $((i % 5)) -eq 0 ]; then
+            # Re-issue connect in case prompt was accepted
+            "$ADB_BIN" connect "$ADB_TARGET" >/dev/null 2>&1 || true
+        fi
         printf "\r  Waiting for auth... %ds" "$((i * 2))"
         sleep 2
     done
@@ -589,13 +788,20 @@ log "OTA update services disabled (httpupdate, usbupdate)"
 adb_sh "pm clear com.jio.httpupdate"
 log "Staged update files cleared"
 
-# Disable remote TR-069 push and remote command triggers
-adb_sh "cmd appops set com.jio.tr069client RUN_IN_BACKGROUND ignore"
-adb_sh "cmd appops set com.jio.tr069client RUN_ANY_IN_BACKGROUND ignore"
-adb_sh "pm disable-user --user 0 com.jio.tr069client"
-adb_sh "pm disable-user --user 0 com.rjil.jio.stb.commandreceiver"
-adb_sh "pm disable-user --user 0 com.jio.backgroundscheduler"
-log "TR-069 push and remote command triggers disabled"
+# Disable remote TR-069 push and remote command triggers (safety gated)
+if [ "$YES_DISABLE_TR069" = true ]; then
+    adb_sh "cmd appops set com.jio.tr069client RUN_IN_BACKGROUND ignore"
+    adb_sh "cmd appops set com.jio.tr069client RUN_ANY_IN_BACKGROUND ignore"
+    adb_sh "pm disable-user --user 0 com.jio.tr069client"
+    adb_sh "pm disable-user --user 0 com.rjil.jio.stb.commandreceiver"
+    adb_sh "pm disable-user --user 0 com.jio.backgroundscheduler"
+    log "TR-069 client and remote triggers disabled (--yes-disable-tr069)"
+else
+    echo -e "  ${YELLOW}! Safety Notice: Skipping TR-069 client disable.${NC}"
+    echo -e "    On some firmware revisions, disabling com.jio.tr069client prevents ADB port 5555"
+    echo -e "    from surviving future reboots. If you are certain your firmware retains ADB,"
+    echo -e "    re-run with ${CYAN}--yes-disable-tr069${NC}."
+fi
 
 # Uninstall ad service
 adb_sh "pm uninstall -k --user 0 com.jio.stbadservice"
@@ -644,24 +850,35 @@ if [ "$TOTAL_APKS" -gt 0 ]; then
         else
             echo -e "${YELLOW}Failed${NC}"
         fi
-        # Short pause between installs so the STB package manager settles
         sleep 2
         idx=$((idx + 1))
     done
     [ "$APK_COUNT" -gt 0 ] && log "Installed $APK_COUNT of $TOTAL_APKS APK(s)"
 fi
 
-# Grant Monet Launcher extra permissions if present
+# Activate Monet Launcher and ensure it survives reboot
 if adb_sh "pm list packages" 2>/dev/null | grep -q "com.klevico.monet"; then
     adb_sh "pm grant com.klevico.monet android.permission.WRITE_SECURE_SETTINGS 2>/dev/null || true"
     log "Granted WRITE_SECURE_SETTINGS to Monet Launcher"
+
+    # Launch Monet once to verify rendering
+    adb_sh "am start -n com.klevico.monet/.HomeActivity 2>/dev/null || true"
+    sleep 1
+
+    # JioService re-enables stock launcher at boot, but 'pm suspend' persists across reboots
+    adb_sh "pm suspend --user 0 com.iwedia.ui.rjio.launcher.reliance 2>/dev/null || true"
+    adb_sh "pm disable-user --user 0 com.iwedia.ui.rjio.launcher.reliance 2>/dev/null || true"
+    adb_sh "cmd package set-home-activity com.klevico.monet/.HomeActivity 2>/dev/null || true"
+    adb_sh "input keyevent KEYCODE_HOME 2>/dev/null || true"
+    log "Monet Launcher set as active home (stock launcher suspended to prevent boot ad reversion)"
 fi
 
-# Grant Shizuku / Shevery extra permissions if present
-for pkg in "moe.shizuku.privileged.api" "com.hamondev.shevery"; do
+# Grant Shevery (Shizuku-compatible API) extra permissions if present
+for pkg in "com.hamondev.shevery" "moe.shizuku.privileged.api"; do
     if adb_sh "pm list packages" 2>/dev/null | grep -q "$pkg"; then
         adb_sh "pm grant $pkg android.permission.WRITE_SECURE_SETTINGS 2>/dev/null || true"
-        log "Granted WRITE_SECURE_SETTINGS to Shizuku/Shevery ($pkg)"
+        adb_sh "pm grant $pkg android.permission.PACKAGE_USAGE_STATS 2>/dev/null || true"
+        log "Granted permissions to Shevery/Shizuku ($pkg)"
     fi
 done
 
@@ -672,7 +889,11 @@ echo "  Done:"
 echo "    - USB debugging enabled (expires 2037)"
 echo "    - FOTA / OTA updates disabled & staged updates cleared"
 echo "    - Firmware downgrade enabled"
-echo "    - TR-069 & remote command triggers disabled"
+if [ "$YES_DISABLE_TR069" = true ]; then
+    echo "    - TR-069 push client disabled"
+else
+    echo "    - TR-069 push client preserved (pass --yes-disable-tr069 to disable)"
+fi
 echo "    - Developer Options enabled"
 echo "    - Jio Ad Service uninstalled"
 [ "$APK_COUNT" -gt 0 ] && echo "    - $APK_COUNT app(s) installed"
