@@ -2,6 +2,12 @@
 
 A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging** and sideload custom launchers/apps on supported Jio Set-Top Boxes using a Windows PC and your home Wi-Fi router.
 
+> [!TIP]
+> **Need Hands-On Help or Want Me to Do It For You?**
+> * **100% Free Self-Help:** This guide and any remote assistance or troubleshooting you need are completely **free of cost**.
+> * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to me and I will set it up for you! You can pay me whatever your heart desires + return shipping.
+> * **Telegram:** Reach out directly at [**@soloxsurfer**](https://t.me/soloxsurfer).
+
 > [!NOTE]
 > **Supported Hardware & Firmware:**
 > * **JMSC200Av2** and **JMSB200A** across firmware builds `22.1.09`, `24.1.39`, `25.1.9`, and older.
@@ -22,8 +28,8 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal ([@soloxsurfer](https://twitter.com/soloxsurfer)) on Twitter:**
-> If this guide helped you and you'd like to support me, I don't want any money—just keep me in your blessings for future success!
+> ❤️ **A quick note from Vishal Beniwal ([@soloxsurfer](https://twitter.com/soloxsurfer)) on Twitter / Telegram ([@soloxsurfer](https://t.me/soloxsurfer)):**
+> The guide and all troubleshooting assistance are completely free! If you find the process too complicated and prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
 
@@ -57,6 +63,7 @@ Once you execute Stage 1, the script performs several handy quality-of-life modi
   * [12. Teardown & Reset](#step-12-teardown--reset)
 * [How to Install Apps via ADB](#-how-to-install-apps-via-adb)
 * [Advanced CLI & JHS Options](#-advanced-cli-options)
+* [Get Hands-On Help / Mail-In Setup](#-get-hands-on-help--mail-in-setup)
 * [Credits & Acknowledgments](#-credits--acknowledgments)
 
 ---
@@ -212,6 +219,10 @@ Select your STB when prompted. To run only the required payload without strippin
 > 2. Wait 5 seconds $\rightarrow$ Plug it back in.
 > 3. Allow it to boot up completely.
 
+> [!TIP]
+> **Stuck at any point during Steps 5 to 10?**
+> Don't sweat it. Assistance with following this guide is completely free. If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Telegram at [**@soloxsurfer**](https://t.me/soloxsurfer).
+
 ### Step 11: Verify ADB Connection
 
 > [!NOTE]
@@ -278,6 +289,17 @@ Since the built-in package installer UI is disabled on the STB, install any Andr
 
 ---
 
+## 📬 Get Hands-On Help / Mail-In Setup
+
+If you find this guide too complicated or don't have the time to configure Docker, DNS records, and TLS certificates, I can handle the entire setup for you:
+
+* **100% Free Guidance:** The guide itself and any troubleshooting assistance you need to complete it yourself are completely free.
+* **Mail-In Modification:** Send your box over, and I will unlock network ADB, configure Monet Launcher, and set everything up.
+* **Pricing:** Pay whatever your heart desires + return shipping charges.
+* **Contact:** Message me on Telegram at [**@soloxsurfer**](https://t.me/soloxsurfer).
+
+---
+
 ## ⚠️ Important Disclaimers
 
 * **Scope:** Stage 1 performs modifications such as enabling ADB, queueing downgrade flags, installing Monet Launcher and Shevery, disabling TR-069 settings, and disabling startup ads.
@@ -289,8 +311,8 @@ Since the built-in package installer UI is disabled on the STB, install any Andr
 ## 🌟 Credits & Acknowledgments
 
 * **Documentation, Windows 11 Streamlining & Maintenance:**  
-  Maintained by **Vishal Beniwal** (aka **ilikechocopies**, [@soloxsurfer](https://twitter.com/soloxsurfer) on Twitter).  
-  *No donations needed—just wish me luck and keep me in your blessings!*
+  Maintained by **Vishal Beniwal** (aka **ilikechocopies**, [@soloxsurfer](https://twitter.com/soloxsurfer) on Twitter / [@soloxsurfer](https://t.me/soloxsurfer) on Telegram).  
+  *The guide and any personal support are completely free. If you need me to do the process for you, pay whatever your heart desires + shipping!*
 
 * **Original Vulnerability Research & Tooling:**  
   Massive respect to **Bihaan Sen**, **ak_0o7**, and **Otus9051** for the reverse-engineering and original [Housekeeping-PoC](https://github.com/JFC-Group/Housekeeping-PoC/) repository. Please star and support their project!
