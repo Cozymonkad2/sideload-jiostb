@@ -3,7 +3,6 @@
 A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging** and sideload custom launchers/apps on supported Jio Set-Top Boxes using a Windows PC and your home Wi-Fi router.
 
 > [!NOTE]
-> **I CAN DO IT FOR YOU FOR A FEE IF YOU FIND IT TOO COMPLICATED @soloxsurfer on Telegram
 > **Supported Hardware & Firmware:**
 > * **JMSC200Av2** and **JMSB200A** across firmware builds `22.1.09`, `24.1.39`, `25.1.9`, and older.
 > * **JHS series (JHSC200 v1 / JioOS 2.0)** on firmware build `stb-jhcs200-11.3.46`.
