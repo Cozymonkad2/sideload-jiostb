@@ -65,11 +65,17 @@ def _aware(value):
 
 
 def not_before(cert):
-    return _aware(getattr(cert, "not_valid_before_utc", cert.not_valid_before))
+    val = getattr(cert, "not_valid_before_utc", None)
+    if val is None:
+        val = cert.not_valid_before
+    return _aware(val)
 
 
 def not_after(cert):
-    return _aware(getattr(cert, "not_valid_after_utc", cert.not_valid_after))
+    val = getattr(cert, "not_valid_after_utc", None)
+    if val is None:
+        val = cert.not_valid_after
+    return _aware(val)
 
 
 def fetch_intermediate():
@@ -82,9 +88,11 @@ def fetch_intermediate():
     ) as s:
         try:
             chain = s.get_verified_chain()  # Python 3.13+
-        except AttributeError:
+        except (AttributeError, ssl.SSLError):
             return fetch_intermediate_openssl()
-        return chain[1]
+        if not chain or len(chain) < 2:
+            return fetch_intermediate_openssl()
+        return x509.load_der_x509_certificate(chain[1])
 
 
 def fetch_intermediate_openssl():
