@@ -6,7 +6,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > **Need Hands-On Help or Want Me to Do It For You?**
 > * **100% Free Self-Help:** This guide and any remote assistance or troubleshooting you need are completely **free of cost**.
 > * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to me and I will set it up for you! You can pay me whatever your heart desires + return shipping.
-> * **Telegram:** Reach out directly at [**@soloxsurfer**](https://t.me/soloxsurfer).
+> * **Telegram:** Reach out directly at [**@ilikechocopies**](https://t.me/ilikechocopies).
 
 > [!NOTE]
 > **Supported Hardware & Firmware:**
@@ -28,7 +28,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal ([@soloxsurfer](https://twitter.com/soloxsurfer)) on Twitter / Telegram ([@soloxsurfer](https://t.me/soloxsurfer)):**
+> ❤️ **A quick note from Vishal Beniwal  / Telegram ([@ilikechocopies](https://t.me/ilikechocopies)):**
 > The guide and all troubleshooting assistance are completely free! If you find the process too complicated and prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
@@ -221,7 +221,7 @@ Select your STB when prompted. To run only the required payload without strippin
 
 > [!TIP]
 > **Stuck at any point during Steps 5 to 10?**
-> Don't sweat it. Assistance with following this guide is completely free. If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Telegram at [**@soloxsurfer**](https://t.me/soloxsurfer).
+> Don't sweat it. Assistance with following this guide is completely free. If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Telegram at [**@ilikechocopies**](https://t.me/ilikechocopies).
 
 ### Step 11: Verify ADB Connection
 
@@ -296,7 +296,7 @@ If you find this guide too complicated or don't have the time to configure Docke
 * **100% Free Guidance:** The guide itself and any troubleshooting assistance you need to complete it yourself are completely free.
 * **Mail-In Modification:** Send your box over, and I will unlock network ADB, configure Monet Launcher, and set everything up.
 * **Pricing:** Pay whatever your heart desires + return shipping charges.
-* **Contact:** Message me on Telegram at [**@soloxsurfer**](https://t.me/soloxsurfer).
+* **Contact:** Message me on Telegram at [**@ilikechocopies**](https://t.me/ilikechocopies).
 
 ---
 
@@ -311,7 +311,7 @@ If you find this guide too complicated or don't have the time to configure Docke
 ## 🌟 Credits & Acknowledgments
 
 * **Documentation, Windows 11 Streamlining & Maintenance:**  
-  Maintained by **Vishal Beniwal** (aka **ilikechocopies**, [@soloxsurfer](https://twitter.com/soloxsurfer) on Twitter / [@soloxsurfer](https://t.me/soloxsurfer) on Telegram).  
+  Maintained by **Vishal Beniwal** (aka **ilikechocopies**, [@ilikechocopies](https://twitter.com/ilikechocopies) on Twitter / [@soloxsurfer](https://t.me/soloxsurfer) on Telegram).  
   *The guide and any personal support are completely free. If you need me to do the process for you, pay whatever your heart desires + shipping!*
 
 * **Original Vulnerability Research & Tooling:**  
