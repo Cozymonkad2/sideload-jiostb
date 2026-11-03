@@ -220,7 +220,7 @@ Select your STB when prompted. To run only the required payload without strippin
 
 > [!TIP]
 > **Stuck at any point during Steps 5 to 10?**
-> Don't sweat it. Assistance with following this guide is completely free. If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Reddit at [**u/ilikechocopies**.
+> If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Reddit at [**u/ilikechocopies**.
 
 ### Step 11: Verify ADB Connection
 
