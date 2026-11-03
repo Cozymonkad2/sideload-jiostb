@@ -4,7 +4,6 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 
 > [!TIP]
 > **Need Hands-On Help or Want Me to Do It For You?**
-> * **100% Free Self-Help:** This guide and any remote assistance or troubleshooting you need are completely **free of cost**.
 > * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to me and I will set it up for you! You can pay me whatever your heart desires + return shipping.
 > * **Reddit:** Reach out directly at u/ilikechocopies
 
@@ -29,7 +28,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > ```
 
 > ❤️ **A quick note from Vishal Beniwal  / Reddit u/ilikechocopies**
-> The guide and all troubleshooting assistance are completely free! If you find the process too complicated and prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
+> If you prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
 
