@@ -6,7 +6,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > **Need Hands-On Help or Want Me to Do It For You?**
 > * **100% Free Self-Help:** This guide and any remote assistance or troubleshooting you need are completely **free of cost**.
 > * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to me and I will set it up for you! You can pay me whatever your heart desires + return shipping.
-> * **Telegram:** Reach out directly at [**@ilikechocopies**](https://t.me/ilikechocopies).
+> * **Reddit:** Reach out directly at [**u/ilikechocopies**](https://www.reddit.com/user/ilikechocopies/).
 > * **Instagram:** [**@soloxsurfer**](https://instagram.com/soloxsurfer).
 
 > [!NOTE]
@@ -29,7 +29,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal / Instagram ([@soloxsurfer](https://instagram.com/soloxsurfer)) / Telegram ([@ilikechocopies](https://t.me/ilikechocopies)):**
+> ❤️ **A quick note from Vishal Beniwal / Instagram ([@soloxsurfer](https://instagram.com/soloxsurfer)) / Reddit ([u/ilikechocopies](https://www.reddit.com/user/ilikechocopies/)):**
 > The guide and all troubleshooting assistance are completely free! If you find the process too complicated and prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
