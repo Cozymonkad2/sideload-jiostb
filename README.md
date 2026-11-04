@@ -28,7 +28,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal (@soloxsurfer / Reddit u/ilikechocopies):**  
+> ❤️ **A quick note from Vishal Beniwal (Instagram @soloxsurfer / Reddit u/ilikechocopies):**  
 > If you prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
@@ -293,7 +293,6 @@ Since the built-in package installer UI is disabled on the STB, install any Andr
 
 If you find this guide too complicated or don't have the time to configure Docker, DNS records, and TLS certificates, **Vishal Beniwal** can handle the entire setup for you:
 
-* **100% Free Guidance:** The guide itself and any troubleshooting assistance you need to complete it yourself are completely free.
 * **Mail-In Modification:** Send your box over, and Vishal will unlock network ADB, configure Monet Launcher, and set everything up.
 * **Pricing:** Pay whatever your heart desires + return shipping charges.
 * **Contact:** Reach out to **Vishal Beniwal** on Instagram at [**@soloxsurfer**](https://instagram.com/soloxsurfer) or Reddit at [**u/ilikechocopies**](https://www.reddit.com/user/ilikechocopies).
