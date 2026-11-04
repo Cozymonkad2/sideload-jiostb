@@ -3,9 +3,10 @@
 A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging** and sideload custom launchers/apps on supported Jio Set-Top Boxes using a Windows PC and your home Wi-Fi router.
 
 > [!TIP]
-> **Need Hands-On Help or Want Me to Do It For You?**
-> * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to me and I will set it up for you! You can pay me whatever your heart desires + return shipping.
-> * **Reddit:** Reach out directly at u/ilikechocopies
+> **Need Hands-On Help or Want Vishal Beniwal to Do It For You?**
+> * **Mail-in Service:** If you find this guide too technical or complicated, you can ship your box to Vishal Beniwal and he will set it up for you! You can pay whatever your heart desires + return shipping.
+> * **Reddit:** Reach out directly to Vishal at [u/ilikechocopies](https://www.reddit.com/user/ilikechocopies)
+> * **Instagram:** [@soloxsurfer](https://instagram.com/soloxsurfer)
 
 > [!NOTE]
 > **Supported Hardware & Firmware:**
@@ -27,7 +28,7 @@ A beginner-friendly, clutter-free walkthrough to enable **network ADB debugging*
 > adb install "filename.apk"
 > ```
 
-> ❤️ **A quick note from Vishal Beniwal  / Reddit u/ilikechocopies**
+> ❤️ **A quick note from Vishal Beniwal (@soloxsurfer / Reddit u/ilikechocopies):**  
 > If you prefer me to do it for you, you can ship the box over—pay whatever your heart desires + shipping. Otherwise, just keep me in your blessings for future success!
 
 ---
@@ -220,7 +221,7 @@ Select your STB when prompted. To run only the required payload without strippin
 
 > [!TIP]
 > **Stuck at any point during Steps 5 to 10?**
-> If you find the technical setup too cumbersome, I can also do the whole process for you—just cover shipping + whatever you feel like paying. Reach out via Reddit at [**u/ilikechocopies**.
+> If you find the technical setup too cumbersome, **Vishal Beniwal** can do the entire process for you—just cover shipping + whatever you feel like paying. Reach out via Instagram at [**@soloxsurfer**](https://instagram.com/soloxsurfer) or Reddit at [**u/ilikechocopies**](https://www.reddit.com/user/ilikechocopies).
 
 ### Step 11: Verify ADB Connection
 
@@ -290,12 +291,12 @@ Since the built-in package installer UI is disabled on the STB, install any Andr
 
 ## 📬 Get Hands-On Help / Mail-In Setup
 
-If you find this guide too complicated or don't have the time to configure Docker, DNS records, and TLS certificates, I can handle the entire setup for you:
+If you find this guide too complicated or don't have the time to configure Docker, DNS records, and TLS certificates, **Vishal Beniwal** can handle the entire setup for you:
 
 * **100% Free Guidance:** The guide itself and any troubleshooting assistance you need to complete it yourself are completely free.
-* **Mail-In Modification:** Send your box over, and I will unlock network ADB, configure Monet Launcher, and set everything up.
+* **Mail-In Modification:** Send your box over, and Vishal will unlock network ADB, configure Monet Launcher, and set everything up.
 * **Pricing:** Pay whatever your heart desires + return shipping charges.
-* **Contact:** Message me on Reddit at [**u/ilikechocopies**.
+* **Contact:** Reach out to **Vishal Beniwal** on Instagram at [**@soloxsurfer**](https://instagram.com/soloxsurfer) or Reddit at [**u/ilikechocopies**](https://www.reddit.com/user/ilikechocopies).
 
 ---
 
@@ -310,8 +311,8 @@ If you find this guide too complicated or don't have the time to configure Docke
 ## 🌟 Credits & Acknowledgments
 
 * **Documentation, Windows 11 Streamlining & Maintenance:**  
-  Maintained by **Vishal Beniwal** (aka **u/ilikechocopies**  
-  *The guide and any personal support are completely free. If you need me to do the process for you, pay whatever your heart desires + shipping!*
+  Maintained by **Vishal Beniwal** (Instagram: [**@soloxsurfer**](https://instagram.com/soloxsurfer) / Reddit: [**u/ilikechocopies**](https://www.reddit.com/user/ilikechocopies))  
+  *The guide and any personal support are completely free. If you need Vishal to do the process for you, pay whatever your heart desires + shipping!*
 
 * **Original Vulnerability Research & Tooling:**  
   Massive respect to **Bihaan Sen**, **ak_0o7**, and **Otus9051** for the reverse-engineering and original [Housekeeping-PoC](https://github.com/JFC-Group/Housekeeping-PoC/) repository. Please star and support their project!
